@@ -1,7 +1,8 @@
 <?php
 
 include __DIR__.'/../vendor/dropbox-php/dropbox-php/src/Dropbox/autoload.php';
-
+include __DIR__.'/../oauth/oauth_client.php';
+include __DIR__.'/../httpclient/http.php';
 
 $main = $app['controllers_factory'];
 
@@ -12,60 +13,26 @@ $main = $app['controllers_factory'];
 
 $main->get('/', function(\Symfony\Component\HttpFoundation\Request $request) use ($app) {
 
-    $consumerKey = 'w2iwfqgcatz12y7';
-    $consumerSecret = 'oig0ca9xtwplre5';
+	$key = '12f6692e591f34d122802a92e23cd807483c21e4';
+	$secret = '113b17c5f51faba8a78022937b175e6b36d5c516';
+	$redirectUrl = 'http://local.bc.pl';
 
-    $oauth = new Dropbox_OAuth_PHP($consumerKey, $consumerSecret);
+	$oauth = new oauth_client_class();
+	$oauth->Initialize();
+	$oauth->request_token_url = 'https://launchpad.37signals.com/authorization/new';
+	$oauth->dialog_url = 'https://launchpad.37signals.com/authorization/new?type={SCOPE}&client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}';
+	$oauth->access_token_url = 'https://launchpad.37signals.com/authorization/token?type=web_server';
+	$oauth->client_id = $key;
+	$oauth->redirect_uri = $redirectUrl;
+	$oauth->client_secret = $secret;
+	$oauth->scope = 'web_server';
+	$oauth->debug = true;
 
-    $dropbox = new Dropbox_API($oauth);
+	$oauth->Process();
 
-    /** @var \Symfony\Component\HttpFoundation\Session\Session $session  */
-    $session = $app['session'];
 
-//    $session->set("state", 1);
-//    $session->remove("oauth_token");
-//    die;
 
 	return $app['twig']->render('main.twig');
-
-    if ($session->has('state'))
-    {
-        $state = $session->get('state');
-    }
-    else
-    {
-        $state = 1;
-    }
-
-    switch($state)
-    {
-        case 1:
-
-            $tokens = $oauth->getRequestToken();
-            $session->set("state", 2);
-            $session->set("oauth_tokens", $tokens);
-
-            return new \Symfony\Component\HttpFoundation\RedirectResponse($oauth->getAuthorizeUrl("http://localhost/mgr-project/web/index.php/"));
-
-        case 2:
-            echo "Step 3: Acquiring access tokens<br>";
-            $oauth->setToken($session->get('oauth_tokens'));
-            $tokens = $oauth->getAccessToken();
-            var_dump($tokens);
-            $session->set('state', 3);
-            $session->set('oauth_tokens', $tokens);
-
-        case 3 :
-            echo "The user is authenticated<br>";
-            echo "You should really save the oauth tokens somewhere, so the first steps will no longer be needed<br>";
-            print_r($session->get('oauth_tokens'));
-            $oauth->setToken($session->get('oauth_tokens'));
-            var_dump($dropbox->getAccountInfo());
-            break;
-
-    }
-
-    return $app['twig']->render('main.twig');
 });
 
 return $main;
