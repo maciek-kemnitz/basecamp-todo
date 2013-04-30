@@ -16,5 +16,4 @@ $app->register(new Silex\Provider\SessionServiceProvider());
 
 
 $app->mount('/', include 'main.php');
-$app->mount('/b', include 'b.php');
 $app->run();
